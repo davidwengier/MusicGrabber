@@ -26,15 +26,33 @@ public class SettingsForm : Form
         MinimizeBox = false;
         Padding = new Padding(12);
 
+        // Buttons docked to bottom
+        var buttonPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 40,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 5, 0, 0)
+        };
+
+        var cancelBtn = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel };
+        var okBtn = new Button { Text = "OK" };
+        okBtn.Click += OnSave;
+
+        buttonPanel.Controls.Add(cancelBtn);
+        buttonPanel.Controls.Add(okBtn);
+
+        // Form fields in a table layout
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 8,
-            AutoSize = true
+            RowCount = 6
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (int i = 0; i < 6; i++)
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         int row = 0;
 
@@ -63,25 +81,8 @@ public class SettingsForm : Form
         _subfolderBox = new TextBox { Text = settings.DeviceSubfolder ?? "Music", Dock = DockStyle.Fill };
         layout.Controls.Add(_subfolderBox, 1, row++);
 
-        // Spacer
-        layout.Controls.Add(new Panel(), 0, row++);
-
-        var buttonPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.RightToLeft,
-            AutoSize = true
-        };
-
-        var cancelBtn = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel };
-        var okBtn = new Button { Text = "OK" };
-        okBtn.Click += OnSave;
-
-        buttonPanel.Controls.Add(okBtn);
-        buttonPanel.Controls.Add(cancelBtn);
-        layout.Controls.Add(buttonPanel, 1, row);
-
         Controls.Add(layout);
+        Controls.Add(buttonPanel);
         AcceptButton = okBtn;
         CancelButton = cancelBtn;
     }
