@@ -95,19 +95,22 @@ public class MainForm : Form
             Dock = DockStyle.Top,
             Height = 35,
             FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowOnly,
             Padding = new Padding(0, 3, 0, 0)
         };
 
-        _selectAllBtn = new Button { Text = "Select All", AutoSize = true };
+        _selectAllBtn = new Button { Text = "Select All", Width = 75 };
         _selectAllBtn.Click += (_, _) => ToggleSelectAll();
 
-        _downloadBtn = new Button { Text = "⬇ Download Selected", AutoSize = true, Enabled = false };
+        _downloadBtn = new Button { Text = "Download", Width = 75, Enabled = false };
         _downloadBtn.Click += async (_, _) => await DownloadSelectedAsync();
 
-        _transferBtn = new Button { Text = "📱 Copy to Device", AutoSize = true, Enabled = false };
+        _transferBtn = new Button { Text = "To Device", Width = 75, Enabled = false };
         _transferBtn.Click += async (_, _) => await TransferToDeviceAsync();
 
-        var cancelBtn = new Button { Text = "Cancel", AutoSize = true };
+        var cancelBtn = new Button { Text = "Cancel", Width = 75 };
         cancelBtn.Click += (_, _) => _cts?.Cancel();
 
         actionPanel.Controls.AddRange([_selectAllBtn, _downloadBtn, _transferBtn, cancelBtn]);
