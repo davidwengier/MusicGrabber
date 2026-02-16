@@ -96,7 +96,7 @@ public class SpotifyService
                 Id = item.Id!,
                 Name = item.Name!,
                 Owner = item.Owner?.DisplayName ?? "Unknown",
-                TrackCount = item.Tracks?.Total ?? 0
+                TrackCount = item.Items?.Total ?? 0
             });
         }
 
@@ -128,7 +128,7 @@ public class SpotifyService
     {
         EnsureAuthenticated();
         var tracks = new List<TrackInfo>();
-        var page = await _client!.Playlists.GetItems(playlistId);
+        var page = await _client!.Playlists.GetPlaylistItems(playlistId);
         int num = 1;
 
         await foreach (var item in _client.Paginate(page))

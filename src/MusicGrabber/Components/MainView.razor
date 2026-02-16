@@ -247,8 +247,6 @@
     [Inject] private LoginService LoginService { get; set; } = default!;
     [Inject] private DialogService DialogService { get; set; } = default!;
 
-    private bool _restoringSession;
-
     protected override void OnInitialized()
     {
         _downloadPath = Settings.DownloadPath;
@@ -262,7 +260,6 @@
     {
         if (firstRender && !Spotify.IsAuthenticated && !string.IsNullOrWhiteSpace(Settings.SpotifyClientId))
         {
-            _restoringSession = true;
             _statusText = "Restoring session...";
             StateHasChanged();
 
@@ -276,7 +273,6 @@
                 _statusText = "Ready";
             }
 
-            _restoringSession = false;
             StateHasChanged();
         }
     }
