@@ -18,15 +18,16 @@ public class TrackInfo
 
     public string SearchQuery => $"{Artist} - {Title}";
 
-    public string SafeFileName
+    public string SafeFileName => GetFileName(includeArtist: false);
+
+    public string GetFileName(bool includeArtist)
     {
-        get
-        {
-            var name = $"{TrackNumber:D2} - {Title}.mp3";
-            foreach (var c in Path.GetInvalidFileNameChars())
-                name = name.Replace(c, '_');
-            return name;
-        }
+        var name = includeArtist
+            ? $"{TrackNumber:D2} - {Artist} - {Title}.mp3"
+            : $"{TrackNumber:D2} - {Title}.mp3";
+        foreach (var c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
     }
 
     public override string ToString() => $"{Artist} - {Title} ({Album})";

@@ -415,6 +415,7 @@
         {
             await Downloader.DownloadTracksAsync(
                 selected, _downloadPath, GetSubfolderName(), Settings.YtDlpPath, Settings.FfmpegPath,
+                includeArtistInFileName: _tab == Tab.Playlists,
                 progress, _cts.Token);
             _statusText = "Download complete";
         }

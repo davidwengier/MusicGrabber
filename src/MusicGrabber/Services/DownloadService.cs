@@ -14,6 +14,7 @@ public class DownloadService
         string? subfolder,
         string ytDlpPath,
         string ffmpegPath,
+        bool includeArtistInFileName = false,
         IProgress<(int current, int total)>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -30,7 +31,7 @@ public class DownloadService
 
             try
             {
-                var outputPath = Path.Combine(trackDir, track.SafeFileName);
+                var outputPath = Path.Combine(trackDir, track.GetFileName(includeArtistInFileName));
 
                 if (File.Exists(outputPath))
                 {
@@ -46,7 +47,7 @@ public class DownloadService
                 if (File.Exists(outputPath))
                 {
                     track.LocalFilePath = outputPath;
-                    Log($"  ✓ Saved: {track.SafeFileName}");
+                    Log($"  ✓ Saved: {track.GetFileName(includeArtistInFileName)}");
                     TrackCompleted?.Invoke(track, true, null);
                 }
                 else
