@@ -67,14 +67,13 @@ public class DownloadService
         string searchQuery, string outputPath, string ytDlpPath, string ffmpegPath,
         CancellationToken cancellationToken)
     {
-        // First, resolve the YouTube URL so we can log it
+        // Resolve the YouTube URL first so we can log it and skip a second search
         var url = await ResolveYouTubeUrlAsync(searchQuery, ytDlpPath, cancellationToken);
         if (url != null)
             Log($"  → {url}");
 
-        // yt-dlp searches YouTube, downloads best audio, converts to mp3
         var args = string.Join(" ", [
-            $"ytsearch1:\"{searchQuery}\"",
+            url != null ? $"\"{url}\"" : $"ytsearch1:\"{searchQuery}\"",
             "--extract-audio",
             "--audio-format mp3",
             "--audio-quality 0",
