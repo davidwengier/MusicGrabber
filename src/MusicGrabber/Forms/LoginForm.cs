@@ -26,6 +26,8 @@ public class LoginForm : Form
 
         Controls.Add(_webView);
 
+        Theme.Apply(this);
+
         Load += async (_, _) =>
         {
             await _webView.EnsureCoreWebView2Async();

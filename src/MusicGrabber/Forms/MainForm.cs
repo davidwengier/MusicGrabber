@@ -124,10 +124,7 @@ public class MainForm : Form
         {
             Dock = DockStyle.Bottom,
             Height = 150,
-            ReadOnly = true,
-            Font = new Font("Consolas", 9),
-            BackColor = Color.FromArgb(30, 30, 30),
-            ForeColor = Color.FromArgb(200, 200, 200)
+            ReadOnly = true
         };
 
         rightPanel.Controls.Add(_trackList);
@@ -149,6 +146,11 @@ public class MainForm : Form
         _downloader.LogMessage += msg => BeginInvoke(() => AppendLog(msg));
         _downloader.TrackCompleted += (_, _, _) => BeginInvoke(UpdateButtonState);
         _transfer.LogMessage += msg => BeginInvoke(() => AppendLog(msg));
+
+        // Apply dark theme
+        Theme.Apply(this);
+        _logBox.Font = Theme.MonoFont;
+        Theme.StyleButton(_downloadBtn, isPrimary: true);
     }
 
     private async Task LoginAsync()

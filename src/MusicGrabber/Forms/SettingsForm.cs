@@ -85,6 +85,9 @@ public class SettingsForm : Form
         Controls.Add(buttonPanel);
         AcceptButton = okBtn;
         CancelButton = cancelBtn;
+
+        Theme.Apply(this);
+        Theme.StyleButton(okBtn, isPrimary: true);
     }
 
     private void PopulateDrives()
