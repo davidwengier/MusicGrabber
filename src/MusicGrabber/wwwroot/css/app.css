@@ -389,6 +389,22 @@ html, body {
     font-size: 12px;
 }
 
+.folder-input-row {
+    display: flex;
+    gap: 4px;
+}
+
+.folder-input-row .form-input {
+    flex: 1;
+}
+
+.folder-browse-btn {
+    padding: 4px 8px !important;
+    font-size: 14px !important;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
 .folder-naming-row {
     display: flex;
     align-items: center;

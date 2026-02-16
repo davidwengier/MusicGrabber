@@ -129,8 +129,11 @@
 
             <div class="download-bar">
                 <div class="download-options">
-                    <input class="form-input" @bind="_downloadPath" @bind:after="SaveDownloadPath"
-                           placeholder="Download folder..." />
+                    <div class="folder-input-row">
+                        <input class="form-input" @bind="_downloadPath" @bind:after="SaveDownloadPath"
+                               placeholder="Download folder..." />
+                        <button class="btn btn-sm folder-browse-btn" @onclick="BrowseForFolder" title="Browse...">📁</button>
+                    </div>
                     <div class="folder-naming-row">
                         <label>Folder name:</label>
                         @if (_tab == Tab.Albums)
@@ -438,6 +441,16 @@
     {
         Settings.DownloadPath = _downloadPath.Trim();
         Settings.Save();
+    }
+
+    private async Task BrowseForFolder()
+    {
+        var path = await LoginService.BrowseForFolderAsync(_downloadPath);
+        if (path != null)
+        {
+            _downloadPath = path;
+            SaveDownloadPath();
+        }
     }
 
     private void SaveFolderNaming()
