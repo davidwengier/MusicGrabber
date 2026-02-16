@@ -128,9 +128,17 @@
             </div>
 
             <div class="download-bar">
-                <div class="download-path">
+                <div class="download-options">
                     <input class="form-input" @bind="_downloadPath" @bind:after="SaveDownloadPath"
                            placeholder="Download folder..." />
+                    <div class="folder-naming-row">
+                        <label>Folder name:</label>
+                        <select class="form-select form-select-sm" @bind="_folderNaming" @bind:after="SaveFolderNaming">
+                            <option value="@FolderNaming.ArtistAlbum">Artist - Album</option>
+                            <option value="@FolderNaming.AlbumOnly">Album only</option>
+                        </select>
+                        <span class="folder-preview">→ @GetSubfolderName()</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary" disabled="@(!HasChecked || _busy)"
                         @onclick="DownloadSelectedAsync">
@@ -224,6 +232,7 @@
     private ElementReference _logElement;
     private CancellationTokenSource? _cts;
     private string _downloadPath = "";
+    private FolderNaming _folderNaming;
 
     private bool _allSelected => _checked.Count > 0 && _checked.All(c => c);
     private bool HasChecked => _checked.Any(c => c);
@@ -236,6 +245,7 @@
     protected override void OnInitialized()
     {
         _downloadPath = Settings.DownloadPath;
+        _folderNaming = Settings.FolderNaming;
         Downloader.LogMessage += OnLog;
         Transfer.LogMessage += OnLog;
         Downloader.TrackCompleted += OnTrackCompleted;
@@ -401,7 +411,7 @@
         try
         {
             await Downloader.DownloadTracksAsync(
-                selected, _downloadPath, Settings.YtDlpPath, Settings.FfmpegPath,
+                selected, _downloadPath, GetSubfolderName(), Settings.YtDlpPath, Settings.FfmpegPath,
                 progress, _cts.Token);
             _statusText = "Download complete";
         }
@@ -425,6 +435,28 @@
     {
         Settings.DownloadPath = _downloadPath.Trim();
         Settings.Save();
+    }
+
+    private void SaveFolderNaming()
+    {
+        Settings.FolderNaming = _folderNaming;
+        Settings.Save();
+    }
+
+    private string GetSubfolderName()
+    {
+        if (_tracks.Count == 0) return "";
+
+        var firstTrack = _tracks[0];
+
+        // For playlists, use the selected name
+        if (_tab == Tab.Playlists)
+            return _selectedName;
+
+        // For albums, use naming preference
+        return _folderNaming == FolderNaming.ArtistAlbum
+            ? $"{firstTrack.Artist} - {firstTrack.Album}"
+            : firstTrack.Album;
     }
 
     private List<TrackInfo> GetSelectedTracks()

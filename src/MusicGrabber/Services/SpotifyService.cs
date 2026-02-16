@@ -129,12 +129,15 @@ public class SpotifyService
         EnsureAuthenticated();
         var tracks = new List<TrackInfo>();
         var page = await _client!.Playlists.GetItems(playlistId);
+        int num = 1;
 
         await foreach (var item in _client.Paginate(page))
         {
             if (item.Track is FullTrack track)
             {
-                tracks.Add(MapTrack(track));
+                var t = MapTrack(track);
+                t.TrackNumber = num++;
+                tracks.Add(t);
             }
         }
 
@@ -155,7 +158,8 @@ public class SpotifyService
                 Artist = string.Join(", ", item.Artists.Select(a => a.Name)),
                 Album = album.Name,
                 SpotifyUri = item.Uri,
-                Duration = TimeSpan.FromMilliseconds(item.DurationMs)
+                Duration = TimeSpan.FromMilliseconds(item.DurationMs),
+                TrackNumber = item.TrackNumber
             });
         }
 

@@ -11,12 +11,16 @@ public class DownloadService
     public async Task DownloadTracksAsync(
         IReadOnlyList<TrackInfo> tracks,
         string outputDir,
+        string? subfolder,
         string ytDlpPath,
         string ffmpegPath,
         IProgress<(int current, int total)>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        Directory.CreateDirectory(outputDir);
+        var trackDir = string.IsNullOrWhiteSpace(subfolder)
+            ? outputDir
+            : Path.Combine(outputDir, SanitizePath(subfolder));
+        Directory.CreateDirectory(trackDir);
 
         for (int i = 0; i < tracks.Count; i++)
         {
@@ -26,7 +30,7 @@ public class DownloadService
 
             try
             {
-                var outputPath = Path.Combine(outputDir, track.SafeFileName);
+                var outputPath = Path.Combine(trackDir, track.SafeFileName);
 
                 if (File.Exists(outputPath))
                 {
@@ -160,4 +164,11 @@ public class DownloadService
     }
 
     private void Log(string message) => LogMessage?.Invoke(message);
+
+    private static string SanitizePath(string name)
+    {
+        foreach (var c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
+    }
 }

@@ -11,8 +11,8 @@ public class MainForm : Form
     public MainForm()
     {
         Text = "MusicGrabber";
-        Width = 1100;
-        Height = 750;
+        Width = 1600;
+        Height = 1000;
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(22, 22, 30);
 

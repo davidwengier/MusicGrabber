@@ -371,23 +371,54 @@ html, body {
 /* === Download Bar === */
 .download-bar {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-end;
+    gap: 12px;
     padding: 10px 20px;
     border-top: 1px solid var(--border);
     background: var(--bg-secondary);
 }
 
-.download-bar .download-path {
+.download-bar .download-options {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.download-bar .download-path .form-input {
+.download-bar .download-options .form-input {
     font-size: 12px;
+}
+
+.folder-naming-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.folder-naming-row label {
+    white-space: nowrap;
+}
+
+.folder-naming-row .form-select-sm {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.folder-preview {
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
 }
 
 .download-bar .btn {
     flex-shrink: 0;
+    align-self: stretch;
 }
 
 /* === Log Panel === */
