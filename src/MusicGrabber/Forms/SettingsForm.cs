@@ -74,15 +74,15 @@ public class SettingsForm : Form
         };
 
         var cancelBtn = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel };
-        var saveBtn = new Button { Text = "Save" };
-        saveBtn.Click += OnSave;
+        var okBtn = new Button { Text = "OK" };
+        okBtn.Click += OnSave;
 
+        buttonPanel.Controls.Add(okBtn);
         buttonPanel.Controls.Add(cancelBtn);
-        buttonPanel.Controls.Add(saveBtn);
         layout.Controls.Add(buttonPanel, 1, row);
 
         Controls.Add(layout);
-        AcceptButton = saveBtn;
+        AcceptButton = okBtn;
         CancelButton = cancelBtn;
     }
 
