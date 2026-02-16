@@ -89,14 +89,6 @@
                 <button class="btn btn-sm" @onclick="ToggleSelectAll">
                     @(_allSelected ? "Deselect All" : "Select All")
                 </button>
-                <button class="btn btn-primary btn-sm" disabled="@(!HasChecked || _busy)"
-                        @onclick="DownloadSelectedAsync">
-                    ⬇ Download (@CheckedCount)
-                </button>
-                <button class="btn btn-sm" disabled="@(!HasDownloaded || _busy)"
-                        @onclick="TransferSelectedAsync">
-                    📱 To Device
-                </button>
                 @if (_busy)
                 {
                     <button class="btn btn-danger btn-sm" @onclick="Cancel">Cancel</button>
@@ -133,6 +125,17 @@
                         </span>
                     </div>
                 }
+            </div>
+
+            <div class="download-bar">
+                <div class="download-path">
+                    <input class="form-input" @bind="_downloadPath" @bind:after="SaveDownloadPath"
+                           placeholder="Download folder..." />
+                </div>
+                <button class="btn btn-primary" disabled="@(!HasChecked || _busy)"
+                        @onclick="DownloadSelectedAsync">
+                    ⬇ Download @(HasChecked ? $"({CheckedCount})" : "")
+                </button>
             </div>
         }
         else if (Spotify.IsAuthenticated)
@@ -220,11 +223,11 @@
     private List<string> _logLines = [];
     private ElementReference _logElement;
     private CancellationTokenSource? _cts;
+    private string _downloadPath = "";
 
     private bool _allSelected => _checked.Count > 0 && _checked.All(c => c);
     private bool HasChecked => _checked.Any(c => c);
     private int CheckedCount => _checked.Count(c => c);
-    private bool HasDownloaded => _tracks.Any(t => t.LocalFilePath != null) && HasChecked;
 
     [Inject] private LoginService LoginService { get; set; } = default!;
 
@@ -232,6 +235,7 @@
 
     protected override void OnInitialized()
     {
+        _downloadPath = Settings.DownloadPath;
         Downloader.LogMessage += OnLog;
         Transfer.LogMessage += OnLog;
         Downloader.TrackCompleted += OnTrackCompleted;
@@ -397,7 +401,7 @@
         try
         {
             await Downloader.DownloadTracksAsync(
-                selected, Settings.DownloadPath, Settings.YtDlpPath, Settings.FfmpegPath,
+                selected, _downloadPath, Settings.YtDlpPath, Settings.FfmpegPath,
                 progress, _cts.Token);
             _statusText = "Download complete";
         }
@@ -417,54 +421,10 @@
         }
     }
 
-    private async Task TransferSelectedAsync()
+    private void SaveDownloadPath()
     {
-        if (string.IsNullOrWhiteSpace(Settings.DeviceDriveLetter))
-        {
-            Log("✗ No device configured. Set your MP3 player drive in Settings.");
-            return;
-        }
-
-        var targetPath = Path.Combine(Settings.DeviceDriveLetter + "\\", Settings.DeviceSubfolder ?? "Music");
-        var selected = GetSelectedTracks().Where(t => t.LocalFilePath != null).ToList();
-
-        if (selected.Count == 0)
-        {
-            Log("No downloaded files to transfer.");
-            return;
-        }
-
-        _busy = true;
-        _cts = new CancellationTokenSource();
-        _progressCurrent = 0;
-        _progressTotal = selected.Count;
-
-        var progress = new Progress<(int current, int total)>(p =>
-        {
-            _progressCurrent = p.current;
-            _progressTotal = p.total;
-            _statusText = $"Copying {p.current}/{p.total}...";
-            InvokeAsync(StateHasChanged);
-        });
-
-        try
-        {
-            await Transfer.TransferTracksAsync(selected, targetPath, progress, _cts.Token);
-            _statusText = "Transfer complete";
-        }
-        catch (OperationCanceledException)
-        {
-            _statusText = "Cancelled";
-        }
-        catch (Exception ex)
-        {
-            Log($"✗ Transfer error: {ex.Message}");
-        }
-        finally
-        {
-            _busy = false;
-            _cts = null;
-        }
+        Settings.DownloadPath = _downloadPath.Trim();
+        Settings.Save();
     }
 
     private List<TrackInfo> GetSelectedTracks()

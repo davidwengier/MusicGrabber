@@ -14,10 +14,6 @@
                 <input class="form-input" @bind="_clientId" @bind:after="AutoSave" placeholder="Paste your Client ID here" />
             </div>
             <div class="form-group">
-                <label>Download Folder</label>
-                <input class="form-input" @bind="_downloadPath" @bind:after="AutoSave" />
-            </div>
-            <div class="form-group">
                 <label>yt-dlp Path</label>
                 <div class="input-with-action">
                     <input class="form-input" @bind="_ytDlpPath" @bind:after="AutoSave" placeholder="yt-dlp (or full path)" />
@@ -53,20 +49,6 @@
             {
                 <div class="tool-message @(_toolError ? "error" : "")">@_toolMessage</div>
             }
-            <div class="form-group">
-                <label>MP3 Player Drive</label>
-                <select class="form-select" @bind="_selectedDrive" @bind:after="AutoSave">
-                    <option value="">-- Select drive --</option>
-                    @foreach (var drive in _drives)
-                    {
-                        <option value="@drive.Name.TrimEnd('\\')">@drive.Name (@drive.VolumeLabel, @drive.DriveType)</option>
-                    }
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Device Subfolder</label>
-                <input class="form-input" @bind="_subfolder" @bind:after="AutoSave" placeholder="Music" />
-            </div>
         </div>
     </div>
 </div>
@@ -77,12 +59,8 @@
     [Parameter] public EventCallback OnSave { get; set; }
 
     private string _clientId = "";
-    private string _downloadPath = "";
     private string _ytDlpPath = "";
     private string _ffmpegPath = "";
-    private string _selectedDrive = "";
-    private string _subfolder = "";
-    private List<DriveInfo> _drives = [];
     private bool _downloadingYtDlp;
     private bool _downloadingFfmpeg;
     private string? _toolMessage;
@@ -91,22 +69,15 @@
     protected override void OnInitialized()
     {
         _clientId = Settings.SpotifyClientId;
-        _downloadPath = Settings.DownloadPath;
         _ytDlpPath = Settings.YtDlpPath;
         _ffmpegPath = Settings.FfmpegPath;
-        _selectedDrive = Settings.DeviceDriveLetter ?? "";
-        _subfolder = Settings.DeviceSubfolder ?? "Music";
-        _drives = FileTransferService.GetRemovableDrives();
     }
 
     private void AutoSave()
     {
         Settings.SpotifyClientId = _clientId.Trim();
-        Settings.DownloadPath = _downloadPath.Trim();
         Settings.YtDlpPath = _ytDlpPath.Trim();
         Settings.FfmpegPath = _ffmpegPath.Trim();
-        Settings.DeviceDriveLetter = string.IsNullOrWhiteSpace(_selectedDrive) ? null : _selectedDrive;
-        Settings.DeviceSubfolder = _subfolder.Trim();
         Settings.Save();
     }
 
