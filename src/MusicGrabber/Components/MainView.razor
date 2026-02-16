@@ -1,0 +1,470 @@
+@using MusicGrabber.Models
+@using MusicGrabber.Services
+@inject SpotifyService Spotify
+@inject DownloadService Downloader
+@inject FileTransferService Transfer
+@inject AppSettings Settings
+
+<div class="app-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MusicGrabber</h1>
+            <div class="subtitle">
+                @if (Spotify.IsAuthenticated)
+                {
+                    <span>Connected ✓</span>
+                }
+                else
+                {
+                    <span>Not connected</span>
+                }
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            @if (!Spotify.IsAuthenticated)
+            {
+                <button class="nav-btn" @onclick="LoginAsync">
+                    <span class="icon">🔗</span> Connect to Spotify
+                </button>
+            }
+            else
+            {
+                <button class="nav-btn" @onclick="Logout">
+                    <span class="icon">🚪</span> Disconnect
+                </button>
+            }
+            <button class="nav-btn" @onclick="() => _showSettings = true">
+                <span class="icon">⚙</span> Settings
+            </button>
+        </div>
+
+        @if (Spotify.IsAuthenticated)
+        {
+            <div class="sidebar-tabs">
+                <button class="tab-btn @(_tab == Tab.Playlists ? "active" : "")"
+                        @onclick="() => SwitchTab(Tab.Playlists)">Playlists</button>
+                <button class="tab-btn @(_tab == Tab.Albums ? "active" : "")"
+                        @onclick="() => SwitchTab(Tab.Albums)">Albums</button>
+            </div>
+
+            <div class="sidebar-list">
+                @if (_loadingCollections)
+                {
+                    <div class="empty-state"><div class="spinner"></div></div>
+                }
+                else if (_tab == Tab.Playlists)
+                {
+                    @foreach (var p in _playlists)
+                    {
+                        <div class="list-item @(_selectedId == p.Id ? "selected" : "")"
+                             @onclick="() => SelectPlaylist(p)">
+                            <div class="item-title">@p.Name</div>
+                            <div class="item-meta">@p.Owner · @p.TrackCount tracks</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    @foreach (var a in _albums)
+                    {
+                        <div class="list-item @(_selectedId == a.Id ? "selected" : "")"
+                             @onclick="() => SelectAlbum(a)">
+                            <div class="item-title">@a.Name</div>
+                            <div class="item-meta">@a.Artist · @a.TrackCount tracks</div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @if (_tracks.Count > 0)
+        {
+            <div class="toolbar">
+                <span class="toolbar-title">@_selectedName</span>
+                <button class="btn btn-sm" @onclick="ToggleSelectAll">
+                    @(_allSelected ? "Deselect All" : "Select All")
+                </button>
+                <button class="btn btn-primary btn-sm" disabled="@(!HasChecked || _busy)"
+                        @onclick="DownloadSelectedAsync">
+                    ⬇ Download (@CheckedCount)
+                </button>
+                <button class="btn btn-sm" disabled="@(!HasDownloaded || _busy)"
+                        @onclick="TransferSelectedAsync">
+                    📱 To Device
+                </button>
+                @if (_busy)
+                {
+                    <button class="btn btn-danger btn-sm" @onclick="Cancel">Cancel</button>
+                }
+            </div>
+
+            <div class="progress-bar-container">
+                @if (_busy && _progressTotal > 0)
+                {
+                    <div class="progress-bar-fill" style="width: @((_progressCurrent * 100 / _progressTotal))%"></div>
+                }
+            </div>
+
+            <div class="track-list">
+                @for (int i = 0; i < _tracks.Count; i++)
+                {
+                    var idx = i;
+                    var track = _tracks[i];
+                    <div class="track-row">
+                        <input type="checkbox" class="track-checkbox"
+                               checked="@_checked[idx]"
+                               @onchange="e => _checked[idx] = (bool)(e.Value ?? false)" />
+                        <span class="track-num">@(idx + 1)</span>
+                        <div class="track-info">
+                            <div class="track-title">@track.Title</div>
+                            <div class="track-artist">@track.Artist — @track.Album</div>
+                        </div>
+                        <span class="track-duration">@track.Duration.ToString(@"m\:ss")</span>
+                        <span class="track-status">
+                            @if (track.LocalFilePath != null)
+                            {
+                                <span title="Downloaded">✓</span>
+                            }
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+        else if (Spotify.IsAuthenticated)
+        {
+            <div class="empty-state">
+                <div class="icon">🎵</div>
+                <h2>Select a playlist or album</h2>
+                <p>Choose from the sidebar to view tracks</p>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="icon">🎧</div>
+                <h2>Welcome to MusicGrabber</h2>
+                <p>Connect your Spotify account to browse playlists and albums, then download them as MP3s.</p>
+                @if (string.IsNullOrWhiteSpace(Settings.SpotifyClientId))
+                {
+                    <button class="btn" @onclick="() => _showSettings = true">
+                        ⚙ Set up Spotify Client ID
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="LoginAsync">
+                        🔗 Connect to Spotify
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- Log Panel -->
+        @if (_logLines.Count > 0 || _busy)
+        {
+            <div class="log-panel">
+                <div class="log-header">
+                    <span>Log</span>
+                    <button class="btn btn-sm" @onclick="_logLines.Clear" style="padding:2px 8px;font-size:11px;">Clear</button>
+                </div>
+                <div class="log-content" @ref="_logElement">
+                    @foreach (var line in _logLines)
+                    {
+                        var css = line.Contains("✓") ? "success" : line.Contains("✗") || line.Contains("Error") ? "error" : "";
+                        <div class="log-line @css">@line</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>@_statusText</span>
+            @if (_tracks.Count > 0)
+            {
+                <span>@CheckedCount / @_tracks.Count tracks selected</span>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+@if (_showSettings)
+{
+    <SettingsDialog Settings="Settings"
+                    OnClose="() => _showSettings = false"
+                    OnSave="OnSettingsSaved" />
+}
+
+@code {
+    private enum Tab { Playlists, Albums }
+
+    private Tab _tab = Tab.Playlists;
+    private List<PlaylistInfo> _playlists = [];
+    private List<AlbumInfo> _albums = [];
+    private List<TrackInfo> _tracks = [];
+    private List<bool> _checked = [];
+    private string _selectedId = "";
+    private string _selectedName = "";
+    private bool _loadingCollections;
+    private bool _busy;
+    private string _statusText = "Ready";
+    private bool _showSettings;
+    private int _progressCurrent;
+    private int _progressTotal;
+    private List<string> _logLines = [];
+    private ElementReference _logElement;
+    private CancellationTokenSource? _cts;
+
+    private bool _allSelected => _checked.Count > 0 && _checked.All(c => c);
+    private bool HasChecked => _checked.Any(c => c);
+    private int CheckedCount => _checked.Count(c => c);
+    private bool HasDownloaded => _tracks.Any(t => t.LocalFilePath != null) && HasChecked;
+
+    [Inject] private LoginService LoginService { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Downloader.LogMessage += OnLog;
+        Transfer.LogMessage += OnLog;
+        Downloader.TrackCompleted += OnTrackCompleted;
+    }
+
+    private void OnLog(string msg)
+    {
+        InvokeAsync(() =>
+        {
+            _logLines.Add(msg);
+            if (_logLines.Count > 500)
+                _logLines.RemoveAt(0);
+            StateHasChanged();
+        });
+    }
+
+    private void OnTrackCompleted(TrackInfo track, bool success, string? error)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoginAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.SpotifyClientId))
+        {
+            _showSettings = true;
+            return;
+        }
+
+        try
+        {
+            _statusText = "Logging in...";
+            var code = await LoginService.LoginAsync(Settings.SpotifyClientId);
+            if (code != null)
+            {
+                await Spotify.CompleteLoginAsync(Settings.SpotifyClientId, code);
+                _statusText = "Connected ✓";
+                await LoadCollectionsAsync();
+            }
+            else
+            {
+                _statusText = "Login cancelled";
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusText = $"Login failed: {ex.Message}";
+            Log($"Login error: {ex.Message}");
+        }
+    }
+
+    private void Logout()
+    {
+        Spotify.Logout();
+        _playlists.Clear();
+        _albums.Clear();
+        _tracks.Clear();
+        _checked.Clear();
+        _selectedId = "";
+        _statusText = "Disconnected";
+    }
+
+    private async Task SwitchTab(Tab tab)
+    {
+        _tab = tab;
+        await LoadCollectionsAsync();
+    }
+
+    private async Task LoadCollectionsAsync()
+    {
+        _loadingCollections = true;
+        try
+        {
+            if (_tab == Tab.Playlists)
+                _playlists = await Spotify.GetUserPlaylistsAsync();
+            else
+                _albums = await Spotify.GetSavedAlbumsAsync();
+        }
+        catch (Exception ex)
+        {
+            Log($"Error: {ex.Message}");
+        }
+        finally
+        {
+            _loadingCollections = false;
+        }
+    }
+
+    private async Task SelectPlaylist(PlaylistInfo p)
+    {
+        _selectedId = p.Id;
+        _selectedName = p.Name;
+        _statusText = "Loading tracks...";
+        _tracks = await Spotify.GetPlaylistTracksAsync(p.Id);
+        _checked = Enumerable.Repeat(true, _tracks.Count).ToList();
+        _statusText = $"{_tracks.Count} tracks";
+    }
+
+    private async Task SelectAlbum(AlbumInfo a)
+    {
+        _selectedId = a.Id;
+        _selectedName = $"{a.Artist} — {a.Name}";
+        _statusText = "Loading tracks...";
+        _tracks = await Spotify.GetAlbumTracksAsync(a.Id);
+        _checked = Enumerable.Repeat(true, _tracks.Count).ToList();
+        _statusText = $"{_tracks.Count} tracks";
+    }
+
+    private void ToggleSelectAll()
+    {
+        var newVal = !_allSelected;
+        for (int i = 0; i < _checked.Count; i++)
+            _checked[i] = newVal;
+    }
+
+    private async Task DownloadSelectedAsync()
+    {
+        var selected = GetSelectedTracks();
+        if (selected.Count == 0) return;
+
+        if (!DownloadService.IsYtDlpAvailable(Settings.YtDlpPath))
+        {
+            Log("✗ yt-dlp not found. Set the path in Settings.");
+            return;
+        }
+
+        _busy = true;
+        _cts = new CancellationTokenSource();
+        _progressCurrent = 0;
+        _progressTotal = selected.Count;
+
+        var progress = new Progress<(int current, int total)>(p =>
+        {
+            _progressCurrent = p.current;
+            _progressTotal = p.total;
+            _statusText = $"Downloading {p.current}/{p.total}...";
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await Downloader.DownloadTracksAsync(
+                selected, Settings.DownloadPath, Settings.YtDlpPath, Settings.FfmpegPath,
+                progress, _cts.Token);
+            _statusText = "Download complete";
+        }
+        catch (OperationCanceledException)
+        {
+            _statusText = "Cancelled";
+            Log("Download cancelled.");
+        }
+        catch (Exception ex)
+        {
+            Log($"✗ Error: {ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+            _cts = null;
+        }
+    }
+
+    private async Task TransferSelectedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.DeviceDriveLetter))
+        {
+            Log("✗ No device configured. Set your MP3 player drive in Settings.");
+            return;
+        }
+
+        var targetPath = Path.Combine(Settings.DeviceDriveLetter + "\\", Settings.DeviceSubfolder ?? "Music");
+        var selected = GetSelectedTracks().Where(t => t.LocalFilePath != null).ToList();
+
+        if (selected.Count == 0)
+        {
+            Log("No downloaded files to transfer.");
+            return;
+        }
+
+        _busy = true;
+        _cts = new CancellationTokenSource();
+        _progressCurrent = 0;
+        _progressTotal = selected.Count;
+
+        var progress = new Progress<(int current, int total)>(p =>
+        {
+            _progressCurrent = p.current;
+            _progressTotal = p.total;
+            _statusText = $"Copying {p.current}/{p.total}...";
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await Transfer.TransferTracksAsync(selected, targetPath, progress, _cts.Token);
+            _statusText = "Transfer complete";
+        }
+        catch (OperationCanceledException)
+        {
+            _statusText = "Cancelled";
+        }
+        catch (Exception ex)
+        {
+            Log($"✗ Transfer error: {ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+            _cts = null;
+        }
+    }
+
+    private List<TrackInfo> GetSelectedTracks()
+    {
+        var selected = new List<TrackInfo>();
+        for (int i = 0; i < _tracks.Count; i++)
+        {
+            if (_checked[i])
+                selected.Add(_tracks[i]);
+        }
+        return selected;
+    }
+
+    private void Cancel() => _cts?.Cancel();
+
+    private void Log(string msg)
+    {
+        _logLines.Add(msg);
+        if (_logLines.Count > 500)
+            _logLines.RemoveAt(0);
+    }
+
+    private void OnSettingsSaved()
+    {
+        _showSettings = false;
+        StateHasChanged();
+    }
+}
