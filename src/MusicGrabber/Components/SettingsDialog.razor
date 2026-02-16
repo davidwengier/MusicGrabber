@@ -1,5 +1,6 @@
 @using MusicGrabber.Models
 @using MusicGrabber.Services
+@inject ToolDownloadService ToolDownload
 
 <div class="settings-overlay" @onclick="OnClose">
     <div class="settings-dialog" @onclick:stopPropagation="true">
@@ -17,12 +18,40 @@
             </div>
             <div class="form-group">
                 <label>yt-dlp Path</label>
-                <input class="form-input" @bind="_ytDlpPath" placeholder="yt-dlp (or full path)" />
+                <div class="input-with-action">
+                    <input class="form-input" @bind="_ytDlpPath" placeholder="yt-dlp (or full path)" />
+                    @if (_downloadingYtDlp)
+                    {
+                        <button class="btn btn-sm" disabled><span class="spinner"></span> Downloading...</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-primary" @onclick="DownloadYtDlp">
+                            @(ToolDownload.YtDlpExists ? "✓ Reinstall" : "⬇ Download")
+                        </button>
+                    }
+                </div>
             </div>
             <div class="form-group">
                 <label>ffmpeg Path</label>
-                <input class="form-input" @bind="_ffmpegPath" placeholder="ffmpeg (or full path)" />
+                <div class="input-with-action">
+                    <input class="form-input" @bind="_ffmpegPath" placeholder="ffmpeg (or full path)" />
+                    @if (_downloadingFfmpeg)
+                    {
+                        <button class="btn btn-sm" disabled><span class="spinner"></span> Downloading...</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-primary" @onclick="DownloadFfmpeg">
+                            @(ToolDownload.FfmpegExists ? "✓ Reinstall" : "⬇ Download")
+                        </button>
+                    }
+                </div>
             </div>
+            @if (_toolMessage != null)
+            {
+                <div class="tool-message @(_toolError ? "error" : "")">@_toolMessage</div>
+            }
             <div class="form-group">
                 <label>MP3 Player Drive</label>
                 <select class="form-select" @bind="_selectedDrive">
@@ -57,6 +86,10 @@
     private string _selectedDrive = "";
     private string _subfolder = "";
     private List<DriveInfo> _drives = [];
+    private bool _downloadingYtDlp;
+    private bool _downloadingFfmpeg;
+    private string? _toolMessage;
+    private bool _toolError;
 
     protected override void OnInitialized()
     {
@@ -67,6 +100,54 @@
         _selectedDrive = Settings.DeviceDriveLetter ?? "";
         _subfolder = Settings.DeviceSubfolder ?? "Music";
         _drives = FileTransferService.GetRemovableDrives();
+    }
+
+    private async Task DownloadYtDlp()
+    {
+        _downloadingYtDlp = true;
+        _toolMessage = "Downloading yt-dlp...";
+        _toolError = false;
+        StateHasChanged();
+
+        try
+        {
+            await ToolDownload.DownloadYtDlpAsync();
+            _ytDlpPath = ToolDownload.YtDlpPath;
+            _toolMessage = "✓ yt-dlp downloaded successfully!";
+        }
+        catch (Exception ex)
+        {
+            _toolMessage = $"✗ Failed to download yt-dlp: {ex.Message}";
+            _toolError = true;
+        }
+        finally
+        {
+            _downloadingYtDlp = false;
+        }
+    }
+
+    private async Task DownloadFfmpeg()
+    {
+        _downloadingFfmpeg = true;
+        _toolMessage = "Downloading ffmpeg (~90MB, this may take a minute)...";
+        _toolError = false;
+        StateHasChanged();
+
+        try
+        {
+            await ToolDownload.DownloadFfmpegAsync();
+            _ffmpegPath = ToolDownload.FfmpegPath;
+            _toolMessage = "✓ ffmpeg downloaded successfully!";
+        }
+        catch (Exception ex)
+        {
+            _toolMessage = $"✗ Failed to download ffmpeg: {ex.Message}";
+            _toolError = true;
+        }
+        finally
+        {
+            _downloadingFfmpeg = false;
+        }
     }
 
     private async Task Save()

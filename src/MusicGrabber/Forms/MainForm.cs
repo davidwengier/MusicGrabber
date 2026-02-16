@@ -20,6 +20,7 @@ public class MainForm : Form
         var spotify = new SpotifyService();
         var downloader = new DownloadService();
         var transfer = new FileTransferService();
+        var toolDownload = new ToolDownloadService();
 
         var services = new ServiceCollection();
         services.AddWindowsFormsBlazorWebView();
@@ -27,6 +28,7 @@ public class MainForm : Form
         services.AddSingleton(spotify);
         services.AddSingleton(downloader);
         services.AddSingleton(transfer);
+        services.AddSingleton(toolDownload);
         services.AddSingleton(new LoginService(spotify, this));
 
         var blazorWebView = new BlazorWebView

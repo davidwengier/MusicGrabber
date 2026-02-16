@@ -602,3 +602,33 @@ html, body {
     background: rgba(230, 70, 70, 0.15);
     color: var(--danger);
 }
+
+/* === Input with Action Button === */
+.input-with-action {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-with-action .form-input {
+    flex: 1;
+}
+
+.input-with-action .btn {
+    flex-shrink: 0;
+}
+
+.tool-message {
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    background: rgba(30, 215, 96, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(30, 215, 96, 0.2);
+}
+
+.tool-message.error {
+    background: rgba(230, 70, 70, 0.1);
+    color: var(--danger);
+    border-color: rgba(230, 70, 70, 0.2);
+}
