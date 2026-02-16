@@ -133,10 +133,13 @@
                            placeholder="Download folder..." />
                     <div class="folder-naming-row">
                         <label>Folder name:</label>
-                        <select class="form-select form-select-sm" @bind="_folderNaming" @bind:after="SaveFolderNaming">
-                            <option value="@FolderNaming.ArtistAlbum">Artist - Album</option>
-                            <option value="@FolderNaming.AlbumOnly">Album only</option>
-                        </select>
+                        @if (_tab == Tab.Albums)
+                        {
+                            <select class="form-select form-select-sm" @bind="_folderNaming" @bind:after="SaveFolderNaming">
+                                <option value="@FolderNaming.ArtistAlbum">Artist - Album</option>
+                                <option value="@FolderNaming.AlbumOnly">Album only</option>
+                            </select>
+                        }
                         <span class="folder-preview">→ @GetSubfolderName()</span>
                     </div>
                 </div>
