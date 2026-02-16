@@ -5,7 +5,7 @@ namespace MusicGrabber.Forms;
 public class LoginForm : Form
 {
     private readonly WebView2 _webView;
-    private readonly string _redirectUri = "http://localhost:5543/callback";
+    private readonly string _redirectUri = "http://127.0.0.1:5543/callback";
 
     public string? AuthorizationCode { get; private set; }
 

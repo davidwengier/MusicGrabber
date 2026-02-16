@@ -5,7 +5,7 @@ namespace MusicGrabber.Services;
 
 public class SpotifyService
 {
-    private const string RedirectUri = "http://localhost:5543/callback";
+    private const string RedirectUri = "http://127.0.0.1:5543/callback";
     private SpotifyClient? _client;
     private string? _verifier;
 

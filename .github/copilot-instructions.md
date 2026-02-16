@@ -24,7 +24,7 @@ MusicGrabber is a WinForms (.NET 10) desktop app that downloads music from Spoti
 ### Forms (`src/MusicGrabber/Forms/`)
 
 - **MainForm** — Primary UI. Split panel with collection browser (left) and checked track list (right). Wires up all services.
-- **LoginForm** — WebView2 embedded browser for Spotify OAuth. Captures auth code from redirect URI (`http://localhost:5543/callback`).
+- **LoginForm** — WebView2 embedded browser for Spotify OAuth. Captures auth code from redirect URI (`http://127.0.0.1:5543/callback`).
 - **SettingsForm** — Configures Spotify Client ID, download path, yt-dlp/ffmpeg paths, and target USB drive.
 
 ### Models (`src/MusicGrabber/Models/`)
@@ -44,4 +44,4 @@ MusicGrabber is a WinForms (.NET 10) desktop app that downloads music from Spoti
 ## External Dependencies
 
 - **yt-dlp** and **ffmpeg** must be installed separately and either on PATH or configured in Settings.
-- A Spotify Developer app must be registered at https://developer.spotify.com/dashboard with redirect URI `http://localhost:5543/callback`.
+- A Spotify Developer app must be registered at https://developer.spotify.com/dashboard with redirect URI `http://127.0.0.1:5543/callback`.
