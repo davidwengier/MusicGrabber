@@ -81,6 +81,8 @@ public class DownloadService
             "--no-warnings"
         ]);
 
+        Log($"  $ {ytDlpPath} {args}");
+
         var psi = new ProcessStartInfo
         {
             FileName = ytDlpPath,
@@ -104,13 +106,16 @@ public class DownloadService
         }
     }
 
-    private static async Task<string?> ResolveYouTubeUrlAsync(
+    private async Task<string?> ResolveYouTubeUrlAsync(
         string searchQuery, string ytDlpPath, CancellationToken ct)
     {
+        var resolveArgs = $"ytsearch1:\"{searchQuery}\" --print webpage_url --no-download --no-warnings";
+        Log($"  $ {ytDlpPath} {resolveArgs}");
+
         var psi = new ProcessStartInfo
         {
             FileName = ytDlpPath,
-            Arguments = $"ytsearch1:\"{searchQuery}\" --print webpage_url --no-download --no-warnings",
+            Arguments = resolveArgs,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
