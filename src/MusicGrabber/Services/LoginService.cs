@@ -1,5 +1,4 @@
 using MusicGrabber.Forms;
-using MusicGrabber.Services;
 
 namespace MusicGrabber.Services;
 
@@ -21,7 +20,8 @@ public class LoginService
     {
         var tcs = new TaskCompletionSource<string?>();
 
-        _owner.Invoke(() =>
+        // BeginInvoke to avoid deadlocking the UI thread
+        _owner.BeginInvoke(() =>
         {
             var (uri, _) = _spotify.CreateLoginRequest(clientId);
             using var loginForm = new LoginForm(uri);
