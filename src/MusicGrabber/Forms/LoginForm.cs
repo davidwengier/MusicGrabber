@@ -5,12 +5,15 @@ namespace MusicGrabber.Forms;
 public class LoginForm : Form
 {
     private readonly WebView2 _webView;
+    private readonly Uri _loginUri;
     private readonly string _redirectUri = "http://127.0.0.1:5543/callback";
 
     public string? AuthorizationCode { get; private set; }
 
     public LoginForm(Uri loginUri)
     {
+        _loginUri = loginUri;
+
         Text = "Login to Spotify";
         Width = 500;
         Height = 700;
@@ -26,11 +29,21 @@ public class LoginForm : Form
 
         Controls.Add(_webView);
 
-        Load += async (_, _) =>
+        Shown += async (_, _) =>
         {
-            await _webView.EnsureCoreWebView2Async();
-            _webView.CoreWebView2.NavigationStarting += OnNavigationStarting;
-            _webView.CoreWebView2.Navigate(loginUri.ToString());
+            try
+            {
+                await _webView.EnsureCoreWebView2Async();
+                _webView.CoreWebView2.NavigationStarting += OnNavigationStarting;
+                _webView.CoreWebView2.Navigate(_loginUri.ToString());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"WebView2 failed to initialize:\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DialogResult = DialogResult.Cancel;
+                Close();
+            }
         };
     }
 
@@ -46,11 +59,7 @@ public class LoginForm : Form
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         AuthorizationCode = query["code"];
 
-        if (AuthorizationCode != null)
-            DialogResult = DialogResult.OK;
-        else
-            DialogResult = DialogResult.Cancel;
-
+        DialogResult = AuthorizationCode != null ? DialogResult.OK : DialogResult.Cancel;
         Close();
     }
 
