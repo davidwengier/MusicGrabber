@@ -16,6 +16,10 @@ public class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(22, 22, 30);
 
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "icon.ico");
+        if (File.Exists(iconPath))
+            Icon = new Icon(iconPath);
+
         var settings = AppSettings.Load();
         var spotify = new SpotifyService();
         var downloader = new DownloadService();
