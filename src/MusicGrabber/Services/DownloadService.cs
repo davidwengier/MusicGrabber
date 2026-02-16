@@ -63,6 +63,11 @@ public class DownloadService
         string searchQuery, string outputPath, string ytDlpPath, string ffmpegPath,
         CancellationToken cancellationToken)
     {
+        // First, resolve the YouTube URL so we can log it
+        var url = await ResolveYouTubeUrlAsync(searchQuery, ytDlpPath, cancellationToken);
+        if (url != null)
+            Log($"  → {url}");
+
         // yt-dlp searches YouTube, downloads best audio, converts to mp3
         var args = string.Join(" ", [
             $"ytsearch1:\"{searchQuery}\"",
@@ -96,6 +101,34 @@ public class DownloadService
         {
             throw new InvalidOperationException(
                 $"yt-dlp exited with code {process.ExitCode}: {stderr.Trim()}");
+        }
+    }
+
+    private static async Task<string?> ResolveYouTubeUrlAsync(
+        string searchQuery, string ytDlpPath, CancellationToken ct)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = ytDlpPath,
+            Arguments = $"ytsearch1:\"{searchQuery}\" --print webpage_url --no-download --no-warnings",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        try
+        {
+            using var process = Process.Start(psi);
+            if (process == null) return null;
+            var output = await process.StandardOutput.ReadToEndAsync(ct);
+            await process.WaitForExitAsync(ct);
+            var url = output.Trim();
+            return url.StartsWith("http") ? url : null;
+        }
+        catch
+        {
+            return null;
         }
     }
 
