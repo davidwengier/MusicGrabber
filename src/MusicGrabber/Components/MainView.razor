@@ -245,6 +245,7 @@
     private int CheckedCount => _checked.Count(c => c);
 
     [Inject] private LoginService LoginService { get; set; } = default!;
+    [Inject] private DialogService DialogService { get; set; } = default!;
 
     private bool _restoringSession;
 
@@ -445,7 +446,7 @@
 
     private async Task BrowseForFolder()
     {
-        var path = await LoginService.BrowseForFolderAsync(_downloadPath);
+        var path = await DialogService.BrowseForFolderAsync(_downloadPath);
         if (path != null)
         {
             _downloadPath = path;

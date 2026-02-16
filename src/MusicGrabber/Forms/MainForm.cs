@@ -34,6 +34,7 @@ public class MainForm : Form
         services.AddSingleton(transfer);
         services.AddSingleton(toolDownload);
         services.AddSingleton(new LoginService(spotify, this));
+        services.AddSingleton(new DialogService(this));
 
         var blazorWebView = new BlazorWebView
         {
