@@ -228,11 +228,36 @@
 
     [Inject] private LoginService LoginService { get; set; } = default!;
 
+    private bool _restoringSession;
+
     protected override void OnInitialized()
     {
         Downloader.LogMessage += OnLog;
         Transfer.LogMessage += OnLog;
         Downloader.TrackCompleted += OnTrackCompleted;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !Spotify.IsAuthenticated && !string.IsNullOrWhiteSpace(Settings.SpotifyClientId))
+        {
+            _restoringSession = true;
+            _statusText = "Restoring session...";
+            StateHasChanged();
+
+            if (await Spotify.TryRestoreSessionAsync(Settings.SpotifyClientId))
+            {
+                _statusText = "Connected ✓";
+                await LoadCollectionsAsync();
+            }
+            else
+            {
+                _statusText = "Ready";
+            }
+
+            _restoringSession = false;
+            StateHasChanged();
+        }
     }
 
     private void OnLog(string msg)

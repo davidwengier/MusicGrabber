@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SpotifyAPI.Web;
 using MusicGrabber.Models;
 
@@ -8,6 +9,11 @@ public class SpotifyService
     private const string RedirectUri = "http://127.0.0.1:5543/callback";
     private SpotifyClient? _client;
     private string? _verifier;
+    private PKCETokenResponse? _tokenResponse;
+
+    private static string TokenFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "MusicGrabber", "spotify_token.json");
 
     public bool IsAuthenticated => _client != null;
 
@@ -36,7 +42,45 @@ public class SpotifyService
         var response = await new OAuthClient().RequestToken(
             new PKCETokenRequest(clientId, code, new Uri(RedirectUri), _verifier!));
 
-        _client = new SpotifyClient(response.AccessToken);
+        SaveToken(response);
+        CreateClient(clientId, response);
+    }
+
+    /// <summary>
+    /// Tries to restore a session from a saved token. Returns true if successful.
+    /// </summary>
+    public async Task<bool> TryRestoreSessionAsync(string clientId)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+            return false;
+
+        var token = LoadToken();
+        if (token == null)
+            return false;
+
+        try
+        {
+            if (token.IsExpired)
+            {
+                var oauthClient = new OAuthClient();
+                var refreshResponse = await oauthClient.RequestToken(
+                    new PKCETokenRefreshRequest(clientId, token.RefreshToken));
+                SaveToken(refreshResponse);
+                token = refreshResponse;
+            }
+
+            CreateClient(clientId, token);
+
+            // Verify the token actually works
+            await _client!.UserProfile.Current();
+            return true;
+        }
+        catch
+        {
+            _client = null;
+            DeleteToken();
+            return false;
+        }
     }
 
     public async Task<List<PlaylistInfo>> GetUserPlaylistsAsync()
@@ -122,6 +166,46 @@ public class SpotifyService
     {
         _client = null;
         _verifier = null;
+        _tokenResponse = null;
+        DeleteToken();
+    }
+
+    private void CreateClient(string clientId, PKCETokenResponse token)
+    {
+        _tokenResponse = token;
+        var authenticator = new PKCEAuthenticator(clientId, token);
+        authenticator.TokenRefreshed += (_, t) => SaveToken(t);
+        var config = SpotifyClientConfig.CreateDefault().WithAuthenticator(authenticator);
+        _client = new SpotifyClient(config);
+    }
+
+    private static void SaveToken(PKCETokenResponse token)
+    {
+        var dir = Path.GetDirectoryName(TokenFilePath)!;
+        Directory.CreateDirectory(dir);
+        var json = JsonSerializer.Serialize(token, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(TokenFilePath, json);
+    }
+
+    private static PKCETokenResponse? LoadToken()
+    {
+        if (!File.Exists(TokenFilePath))
+            return null;
+        try
+        {
+            var json = File.ReadAllText(TokenFilePath);
+            return JsonSerializer.Deserialize<PKCETokenResponse>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void DeleteToken()
+    {
+        if (File.Exists(TokenFilePath))
+            File.Delete(TokenFilePath);
     }
 
     private static TrackInfo MapTrack(FullTrack track) => new()
