@@ -413,10 +413,15 @@
 
         try
         {
+            var subfolderName = GetSubfolderName();
             await Downloader.DownloadTracksAsync(
-                selected, _downloadPath, GetSubfolderName(), Settings.YtDlpPath, Settings.FfmpegPath,
+                selected, _downloadPath, subfolderName, Settings.YtDlpPath, Settings.FfmpegPath,
                 includeArtistInFileName: _tab == Tab.Playlists,
                 progress, _cts.Token);
+
+            if (_tab == Tab.Playlists)
+                await CreatePlaylistFileAsync(selected, _downloadPath, subfolderName, _cts.Token);
+
             _statusText = "Download complete";
         }
         catch (OperationCanceledException)
@@ -471,6 +476,41 @@
         return _folderNaming == FolderNaming.ArtistAlbum
             ? $"{firstTrack.Artist} - {firstTrack.Album}"
             : firstTrack.Album;
+    }
+
+    private async Task CreatePlaylistFileAsync(
+        IReadOnlyList<TrackInfo> tracks,
+        string outputDir,
+        string? subfolder,
+        CancellationToken cancellationToken)
+    {
+        var trackDir = string.IsNullOrWhiteSpace(subfolder)
+            ? outputDir
+            : Path.Combine(outputDir, SanitizePath(subfolder));
+
+        var playlistLines = tracks
+            .Select(t => t.LocalFilePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path) && File.Exists(path))
+            .Select(path => Path.GetFileName(path!))
+            .ToList();
+
+        if (playlistLines.Count == 0)
+        {
+            Log("No tracks available to include in playlist file.");
+            return;
+        }
+
+        var playlistFileName = $"{SanitizePath(_selectedName)}.m3u";
+        var playlistPath = Path.Combine(trackDir, playlistFileName);
+        await File.WriteAllLinesAsync(playlistPath, playlistLines, cancellationToken);
+        Log($"✓ Playlist file created: {playlistFileName}");
+    }
+
+    private static string SanitizePath(string name)
+    {
+        foreach (var c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
     }
 
     private List<TrackInfo> GetSelectedTracks()
