@@ -14,6 +14,7 @@ public class DownloadService
         string? subfolder,
         string ytDlpPath,
         string ffmpegPath,
+        int maxParallelDownloads = 2,
         bool includeArtistInFileName = false,
         IProgress<(int current, int total)>? progress = null,
         CancellationToken cancellationToken = default)
@@ -23,11 +24,17 @@ public class DownloadService
             : Path.Combine(outputDir, SanitizePath(subfolder));
         Directory.CreateDirectory(trackDir);
 
-        for (int i = 0; i < tracks.Count; i++)
+        maxParallelDownloads = Math.Max(1, maxParallelDownloads);
+        var completedCount = 0;
+        var options = new ParallelOptions
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = maxParallelDownloads
+        };
+
+        await Parallel.ForEachAsync(Enumerable.Range(0, tracks.Count), options, async (i, ct) =>
+        {
             var track = tracks[i];
-            progress?.Report((i + 1, tracks.Count));
 
             try
             {
@@ -38,14 +45,15 @@ public class DownloadService
                     Log($"Skipping (already exists): {track}");
                     track.LocalFilePath = outputPath;
                     TrackCompleted?.Invoke(track, true, null);
-                    continue;
+                    return;
                 }
 
                 Log($"Downloading: {track.SearchQuery}");
-                await RunYtDlpAsync(track.SearchQuery, outputPath, ytDlpPath, ffmpegPath, cancellationToken);
+                await RunYtDlpAsync(track.SearchQuery, outputPath, ytDlpPath, ffmpegPath, ct);
 
                 if (File.Exists(outputPath))
                 {
+                    await WriteId3TagsAsync(outputPath, track, ffmpegPath, ct);
                     track.LocalFilePath = outputPath;
                     Log($"  ✓ Saved: {track.GetFileName(includeArtistInFileName)}");
                     TrackCompleted?.Invoke(track, true, null);
@@ -61,7 +69,11 @@ public class DownloadService
                 Log($"  ✗ Error: {ex.Message}");
                 TrackCompleted?.Invoke(track, false, ex.Message);
             }
-        }
+            finally
+            {
+                progress?.Report((Interlocked.Increment(ref completedCount), tracks.Count));
+            }
+        });
     }
 
     private async Task RunYtDlpAsync(
@@ -164,6 +176,76 @@ public class DownloadService
     }
 
     private void Log(string message) => LogMessage?.Invoke(message);
+
+    private async Task WriteId3TagsAsync(
+        string filePath,
+        TrackInfo track,
+        string ffmpegPath,
+        CancellationToken cancellationToken)
+    {
+        var tempPath = Path.Combine(
+            Path.GetDirectoryName(filePath) ?? string.Empty,
+            $"{Path.GetFileNameWithoutExtension(filePath)}.tagged{Path.GetExtension(filePath)}");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = ffmpegPath,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true
+        };
+
+        psi.ArgumentList.Add("-y");
+        psi.ArgumentList.Add("-i");
+        psi.ArgumentList.Add(filePath);
+        psi.ArgumentList.Add("-map");
+        psi.ArgumentList.Add("0:a");
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add("copy");
+        psi.ArgumentList.Add("-id3v2_version");
+        psi.ArgumentList.Add("3");
+        if (!string.IsNullOrWhiteSpace(track.Title))
+        {
+            psi.ArgumentList.Add("-metadata");
+            psi.ArgumentList.Add($"title={track.Title}");
+        }
+        if (!string.IsNullOrWhiteSpace(track.Artist))
+        {
+            psi.ArgumentList.Add("-metadata");
+            psi.ArgumentList.Add($"artist={track.Artist}");
+        }
+        if (!string.IsNullOrWhiteSpace(track.Album))
+        {
+            psi.ArgumentList.Add("-metadata");
+            psi.ArgumentList.Add($"album={track.Album}");
+        }
+        if (track.TrackNumber > 0)
+        {
+            psi.ArgumentList.Add("-metadata");
+            psi.ArgumentList.Add($"track={track.TrackNumber}");
+        }
+        psi.ArgumentList.Add(tempPath);
+
+        try
+        {
+            using var process = Process.Start(psi)
+                ?? throw new InvalidOperationException($"Failed to start ffmpeg at: {ffmpegPath}");
+            var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
+            if (process.ExitCode != 0 || !File.Exists(tempPath))
+            {
+                throw new InvalidOperationException(
+                    $"ffmpeg exited with code {process.ExitCode}: {stderr.Trim()}");
+            }
+
+            File.Copy(tempPath, filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
 
     private static string SanitizePath(string name)
     {

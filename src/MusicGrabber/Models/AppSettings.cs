@@ -7,6 +7,7 @@ public class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MusicGrabber");
     public string YtDlpPath { get; set; } = "yt-dlp";
     public string FfmpegPath { get; set; } = "ffmpeg";
+    public int MaxParallelDownloads { get; set; } = 2;
     public FolderNaming FolderNaming { get; set; } = FolderNaming.ArtistAlbum;
     public string? DeviceDriveLetter { get; set; }
     public string? DeviceSubfolder { get; set; }

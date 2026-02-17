@@ -416,6 +416,7 @@
             var subfolderName = GetSubfolderName();
             await Downloader.DownloadTracksAsync(
                 selected, _downloadPath, subfolderName, Settings.YtDlpPath, Settings.FfmpegPath,
+                Settings.MaxParallelDownloads,
                 includeArtistInFileName: _tab == Tab.Playlists,
                 progress, _cts.Token);
 
