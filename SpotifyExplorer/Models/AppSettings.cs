@@ -1,10 +1,10 @@
-namespace MusicGrabber.Models;
+namespace SpotifyExplorer.Models;
 
 public class AppSettings
 {
     public string SpotifyClientId { get; set; } = string.Empty;
     public string DownloadPath { get; set; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MusicGrabber");
+        Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "SpotifyExplorer");
     public string YtDlpPath { get; set; } = "yt-dlp";
     public string FfmpegPath { get; set; } = "ffmpeg";
     public int MaxParallelDownloads { get; set; } = 2;
@@ -14,7 +14,7 @@ public class AppSettings
 
     private static string SettingsFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "MusicGrabber", "settings.json");
+        "SpotifyExplorer", "settings.json");
 
     public void Save()
     {

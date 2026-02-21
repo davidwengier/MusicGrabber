@@ -1,5 +1,5 @@
-@using MusicGrabber.Models
-@using MusicGrabber.Services
+@using SpotifyExplorer.Models
+@using SpotifyExplorer.Services
 @inject SpotifyService Spotify
 @inject DownloadService Downloader
 @inject FileTransferService Transfer
@@ -9,7 +9,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <h1>MusicGrabber</h1>
+            <h1>SpotifyExplorer</h1>
             <div class="subtitle">
                 @if (Spotify.IsAuthenticated)
                 {
@@ -164,7 +164,7 @@
         {
             <div class="empty-state">
                 <div class="icon">🎧</div>
-                <h2>Welcome to MusicGrabber</h2>
+                <h2>Welcome to SpotifyExplorer</h2>
                 <p>Connect your Spotify account to browse playlists and albums, then download them as MP3s.</p>
                 @if (string.IsNullOrWhiteSpace(Settings.SpotifyClientId))
                 {

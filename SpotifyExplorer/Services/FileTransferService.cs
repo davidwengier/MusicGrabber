@@ -1,6 +1,6 @@
-using MusicGrabber.Models;
+using SpotifyExplorer.Models;
 
-namespace MusicGrabber.Services;
+namespace SpotifyExplorer.Services;
 
 public class FileTransferService
 {

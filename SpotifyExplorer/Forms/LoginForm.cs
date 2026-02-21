@@ -1,6 +1,6 @@
 using Microsoft.Web.WebView2.WinForms;
 
-namespace MusicGrabber.Forms;
+namespace SpotifyExplorer.Forms;
 
 public class LoginForm : Form
 {

@@ -1,4 +1,4 @@
-namespace MusicGrabber.Services;
+namespace SpotifyExplorer.Services;
 
 public class DialogService
 {

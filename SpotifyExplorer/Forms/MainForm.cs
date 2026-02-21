@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.DependencyInjection;
-using MusicGrabber.Components;
-using MusicGrabber.Models;
-using MusicGrabber.Services;
+using SpotifyExplorer.Components;
+using SpotifyExplorer.Models;
+using SpotifyExplorer.Services;
 
-namespace MusicGrabber.Forms;
+namespace SpotifyExplorer.Forms;
 
 public class MainForm : Form
 {
     public MainForm()
     {
-        Text = "MusicGrabber";
+        Text = "SpotifyExplorer";
         Width = 1600;
         Height = 1000;
         StartPosition = FormStartPosition.CenterScreen;

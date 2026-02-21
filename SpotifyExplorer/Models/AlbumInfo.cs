@@ -1,4 +1,4 @@
-namespace MusicGrabber.Models;
+namespace SpotifyExplorer.Models;
 
 public class AlbumInfo
 {

@@ -1,8 +1,8 @@
 using System.Text.Json;
 using SpotifyAPI.Web;
-using MusicGrabber.Models;
+using SpotifyExplorer.Models;
 
-namespace MusicGrabber.Services;
+namespace SpotifyExplorer.Services;
 
 public class SpotifyService
 {
@@ -13,7 +13,7 @@ public class SpotifyService
 
     private static string TokenFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "MusicGrabber", "spotify_token.json");
+        "SpotifyExplorer", "spotify_token.json");
 
     public bool IsAuthenticated => _client != null;
 

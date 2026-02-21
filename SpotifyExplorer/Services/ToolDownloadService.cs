@@ -1,12 +1,12 @@
 using System.IO.Compression;
 
-namespace MusicGrabber.Services;
+namespace SpotifyExplorer.Services;
 
 public class ToolDownloadService
 {
     private static readonly string ToolsDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "MusicGrabber", "tools");
+        "SpotifyExplorer", "tools");
 
     private const string YtDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
     private const string FfmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";

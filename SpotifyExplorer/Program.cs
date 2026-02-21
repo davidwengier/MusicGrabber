@@ -1,6 +1,6 @@
-using MusicGrabber.Forms;
+using SpotifyExplorer.Forms;
 
-namespace MusicGrabber;
+namespace SpotifyExplorer;
 
 static class Program
 {

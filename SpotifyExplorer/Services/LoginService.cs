@@ -1,6 +1,6 @@
-using MusicGrabber.Forms;
+using SpotifyExplorer.Forms;
 
-namespace MusicGrabber.Services;
+namespace SpotifyExplorer.Services;
 
 /// <summary>
 /// Bridges the Blazor UI to WinForms dialogs (OAuth login, folder picker, etc.).
