@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DebridDownload/DebridDownload.csproj" />
+  <Project Path="SpotifyExplorer/SpotifyExplorer.csproj" />
+</Solution>
