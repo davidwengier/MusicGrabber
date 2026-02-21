@@ -146,10 +146,16 @@
                         <span class="folder-preview">→ @GetSubfolderName()</span>
                     </div>
                 </div>
-                <button class="btn btn-primary" disabled="@(!HasChecked || _busy)"
-                        @onclick="DownloadSelectedAsync">
-                    ⬇ Download @(HasChecked ? $"({CheckedCount})" : "")
-                </button>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button class="btn btn-primary" disabled="@(!HasChecked || _busy)"
+                            @onclick="DownloadSelectedAsync">
+                        ⬇ Download @(HasChecked ? $"({CheckedCount})" : "")
+                    </button>
+                    <button class="btn btn-sm" disabled="@(!HasChecked || _busy)"
+                            @onclick="CreateTrackListingAsync">
+                        📝 Create Listing
+                    </button>
+                </div>
             </div>
         }
         else if (Spotify.IsAuthenticated)
@@ -506,6 +512,51 @@
         await File.WriteAllLinesAsync(playlistPath, playlistLines, cancellationToken);
         Log($"✓ Playlist file created: {playlistFileName}");
     }
+
+    private async Task CreateTrackListingAsync()
+    {
+        var selected = GetSelectedTracks();
+        if (selected.Count == 0)
+            return;
+
+        try
+        {
+            var subfolderName = GetSubfolderName();
+            var trackDir = string.IsNullOrWhiteSpace(subfolderName)
+                ? _downloadPath
+                : Path.Combine(_downloadPath, SanitizePath(subfolderName));
+
+            Directory.CreateDirectory(trackDir);
+
+            var fileName = $"{SanitizePath(_selectedName)} - Track Listing.md";
+            var markdownPath = Path.Combine(trackDir, fileName);
+
+            var lines = new List<string>
+            {
+                $"# {_selectedName}",
+                "",
+                "| # | Title | Artist | Album |",
+                "|---:|---|---|---|"
+            };
+
+            foreach (var track in selected.OrderBy(t => t.TrackNumber).ThenBy(t => t.Title))
+            {
+                lines.Add($"| {track.TrackNumber} | {EscapeMarkdownCell(track.Title)} | {EscapeMarkdownCell(track.Artist)} | {EscapeMarkdownCell(track.Album)} |");
+            }
+
+            await File.WriteAllLinesAsync(markdownPath, lines);
+            _statusText = "Track listing created";
+            Log($"✓ Track listing created: {fileName}");
+        }
+        catch (Exception ex)
+        {
+            _statusText = "Failed to create track listing";
+            Log($"✗ Failed to create track listing: {ex.Message}");
+        }
+    }
+
+    private static string EscapeMarkdownCell(string value) =>
+        value.Replace("|", "\\|").Replace("\r", " ").Replace("\n", " ").Trim();
 
     private static string SanitizePath(string name)
     {
