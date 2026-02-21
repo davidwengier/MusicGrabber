@@ -74,6 +74,20 @@ try
                     ? $"file-{i + 1}"
                     : relativePath;
 
+                // The torrent metadata may list a file as .mp3 but Real-Debrid
+                // actually serves a .rar (or other archive). Use the extension
+                // from the unrestrict response when it differs.
+                if (!string.IsNullOrWhiteSpace(unrestricted.FileName))
+                {
+                    var unrestrictedExt = Path.GetExtension(unrestricted.FileName);
+                    var metadataExt = Path.GetExtension(safeRelativePath);
+                    if (!string.IsNullOrEmpty(unrestrictedExt)
+                        && !string.Equals(unrestrictedExt, metadataExt, StringComparison.OrdinalIgnoreCase))
+                    {
+                        safeRelativePath = Path.ChangeExtension(safeRelativePath, unrestrictedExt);
+                    }
+                }
+
                 var destinationPath = Path.Combine(downloadRootDirectory, safeRelativePath);
                 var destinationDirectory = Path.GetDirectoryName(destinationPath);
                 if (!string.IsNullOrWhiteSpace(destinationDirectory))
@@ -131,7 +145,7 @@ sealed class CliArguments
 {
     public string? ApiKey { get; private set; }
     public string? Magnet { get; private set; }
-    public string OutputDirectory { get; private set; } = Path.Combine(Environment.CurrentDirectory, "downloads");
+    public string OutputDirectory { get; private set; } = Path.Combine(Environment.CurrentDirectory, "..", "Music");
     public TimeSpan PollInterval { get; private set; } = TimeSpan.FromSeconds(5);
     public TimeSpan Timeout { get; private set; } = TimeSpan.FromMinutes(30);
     public bool ShowHelp { get; private set; }
