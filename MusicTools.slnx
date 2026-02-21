@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="AlbumCounter/AlbumCounter.csproj" />
   <Project Path="DebridDownload/DebridDownload.csproj" />
+  <Project Path="PlaylistGenerator/PlaylistGenerator.csproj" />
   <Project Path="SpotifyExplorer/SpotifyExplorer.csproj" />
 </Solution>
