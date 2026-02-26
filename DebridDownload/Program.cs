@@ -95,8 +95,12 @@ try
                     Directory.CreateDirectory(destinationDirectory);
                 }
 
-                Console.WriteLine($"Downloading: {safeRelativePath}");
-                await realDebrid.DownloadFileAsync(unrestricted.DownloadUrl, destinationPath);
+                if (!File.Exists(destinationPath))
+                {
+                    Console.WriteLine($"Downloading: {safeRelativePath}");
+            
+                    await realDebrid.DownloadFileAsync(unrestricted.DownloadUrl, destinationPath);
+                }
             }
             catch (Exception ex)
             {
